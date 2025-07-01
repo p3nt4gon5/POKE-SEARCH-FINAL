@@ -1,191 +1,161 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Library, Heart, Sparkles } from 'lucide-react'
-import SearchInput from './SearchInput'
-import PokemonGrid from './PokemonGrid'
-import { usePokemonList } from '../hooks/usePokemon'
-import { Pokemon, PokemonDetail } from '../types/pokemon'
-import Fuse from 'fuse.js'
+import { Search, Loader2 } from 'lucide-react'
+import { useSearchPokemon, useSearchSuggestions } from '../hooks/usePokemon'
+import { useAuth } from '../context/AuthContext'
+import PokemonCard from './PokemonCard'
+import AuthModal from './AuthModal'
 
+// Main search page component with live search and suggestions
 const SearchPage: React.FC = () => {
-    const navigate = useNavigate()
-    const { allPokemons, loading: allPokemonsLoading } = usePokemonList()
-    const [searchResults, setSearchResults] = useState<PokemonDetail[]>([])
-    const [loading, setLoading] = useState(false)
-    const [hasSearched, setHasSearched] = useState(false)
+    const [query, setQuery] = useState('')
+    const [showSuggestions, setShowSuggestions] = useState(false)
+    const [showAuthModal, setShowAuthModal] = useState(false)
 
-    const fetchPokemonDetails = async (
-        pokemons: Pokemon[]
-    ): Promise<PokemonDetail[]> => {
-        const promises = pokemons.map(async (pokemon) => {
-            const response = await fetch(
-                `https://pokeapi.co/api/v2/pokemon/${pokemon.id}`
-            )
-            return response.json()
-        })
-        return Promise.all(promises)
+    const { user } = useAuth()
+    const { results, loading } = useSearchPokemon(query) // Live search without Enter key
+    const suggestions = useSearchSuggestions(query)
+
+    // Handle suggestion selection
+    const handleSuggestionClick = (suggestion: string) => {
+        setQuery(suggestion)
+        setShowSuggestions(false)
     }
 
-    const normalize = (input: string) =>
-        input
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/[^a-z0-9]/g, '')
-
-    const handleSearch = async (searchTerm: string) => {
-        setLoading(true)
-        setHasSearched(true)
-
-        try {
-            const normalizedList = allPokemons.map((pokemon) => ({
-                ...pokemon,
-                norm: normalize(pokemon.name),
-            }))
-
-            const fuse = new Fuse(normalizedList, {
-                keys: ['norm'],
-                includeScore: true,
-                threshold: 0.4,
-            })
-
-            const results = fuse.search(normalize(searchTerm)).slice(0, 20)
-            const matched = results.map((r) => r.item)
-
-            const details = await fetchPokemonDetails(matched)
-            setSearchResults(details)
-        } catch (error) {
-            console.error('Error searching pokemons:', error)
-            setSearchResults([])
-        } finally {
-            setLoading(false)
-        }
-    }
-    const handlePokemonSelect = async (pokemon: Pokemon) => {
-        setLoading(true)
-        setHasSearched(true)
-
-        try {
-            const response = await fetch(
-                `https://pokeapi.co/api/v2/pokemon/${pokemon.id}`
-            )
-            const detail = await response.json()
-            setSearchResults([detail])
-        } catch (error) {
-            console.error('Error fetching pokemon:', error)
-            setSearchResults([])
-        } finally {
-            setLoading(false)
+    // Handle input focus and blur for suggestions
+    const handleInputFocus = () => {
+        if (suggestions.length > 0) {
+            setShowSuggestions(true)
         }
     }
 
-    const handlePokemonClick = (pokemon: PokemonDetail) => {
-        navigate(`/pokemon/${pokemon.id}`)
+    const handleInputBlur = () => {
+        // Delay hiding suggestions to allow clicking
+        setTimeout(() => setShowSuggestions(false), 200)
     }
+
+    // Show suggestions when query changes
+    useEffect(() => {
+        setShowSuggestions(suggestions.length > 0 && query.trim().length > 0)
+    }, [suggestions, query])
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-            {/* Header */}
-            <header className="bg-white/80 backdrop-blur-sm shadow-sm sticky top-0 z-40">
-                <div className="max-w-7xl mx-auto px-4 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                            <Sparkles className="w-8 h-8 text-purple-500" />
-                            <h1
-                                className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 
-                           bg-clip-text text-transparent"
-                            >
-                                Pokemon Explorer
-                            </h1>
+        <>
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+                <div className="container mx-auto px-4 py-8">
+                    <div className="text-center mb-12">
+                        <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+                            Discover Pokémon
+                        </h1>
+                        <p className="text-xl text-gray-600 mb-8">
+                            Search and explore the amazing world of Pokémon with
+                            typo-tolerant search
+                        </p>
+
+                        <div className="relative max-w-2xl mx-auto">
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    onFocus={handleInputFocus}
+                                    onBlur={handleInputBlur}
+                                    placeholder="Search for a Pokémon... (e.g., pikachu, charizard, pikchu - typos work!)"
+                                    className="w-full px-6 py-4 text-lg border-2 border-gray-200 rounded-full focus:border-blue-500 focus:outline-none shadow-lg transition-all duration-300"
+                                />
+                                <div className="absolute right-2 top-2 p-2 bg-blue-500 text-white rounded-full">
+                                    <Search size={24} />
+                                </div>
+                            </div>
+
+                            {showSuggestions && suggestions.length > 0 && (
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border z-10 max-h-60 overflow-y-auto">
+                                    {suggestions.map((suggestion) => (
+                                        <button
+                                            key={suggestion}
+                                            onClick={() =>
+                                                handleSuggestionClick(
+                                                    suggestion
+                                                )
+                                            }
+                                            className="w-full px-4 py-3 text-left hover:bg-gray-100 transition-colors capitalize"
+                                        >
+                                            {suggestion}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
-                        <div className="flex space-x-4">
-                            <button
-                                onClick={() => navigate('/library')}
-                                className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white 
-                         rounded-lg hover:bg-blue-600 transition-colors duration-200"
-                            >
-                                <Library className="w-4 h-4" />
-                                <span>Library</span>
-                            </button>
-                            <button
-                                onClick={() => navigate('/favorites')}
-                                className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white 
-                         rounded-lg hover:bg-red-600 transition-colors duration-200"
-                            >
-                                <Heart className="w-4 h-4" />
-                                <span>Favorites</span>
-                            </button>
-                        </div>
+                        {!user && (
+                            <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg max-w-2xl mx-auto">
+                                <p className="text-yellow-800">
+                                    <strong>Sign in</strong> to save Pokémon to
+                                    your library and favorites!
+                                </p>
+                                <button
+                                    onClick={() => setShowAuthModal(true)}
+                                    className="mt-2 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors"
+                                >
+                                    Sign In / Sign Up
+                                </button>
+                            </div>
+                        )}
                     </div>
-                </div>
-            </header>
 
-            {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-4 py-8">
-                {/* Hero Section */}
-                <div className="text-center mb-12">
-                    <h2 className="text-4xl md:text-6xl font-bold text-gray-800 mb-4">
-                        Find your
-                        <span
-                            className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 
-                           bg-clip-text text-transparent"
-                        >
-                            {' '}
-                            Pokemon
-                        </span>
-                    </h2>
-                    <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-                        Explore the world of Pokemon, add them to your library
-                        and create a collection of favorites
-                    </p>
-
-                    <SearchInput
-                        allPokemons={allPokemons}
-                        onSearch={handleSearch}
-                        onPokemonSelect={handlePokemonSelect}
-                    />
-                </div>
-
-                {/* Results */}
-                {hasSearched && (
-                    <div className="mt-12">
-                        <div className="mb-6">
-                            <h3 className="text-2xl font-bold text-gray-800">
-                                Search Results
-                                {!loading && (
-                                    <span className="text-gray-500 ml-2">
-                                        ({searchResults.length})
-                                    </span>
-                                )}
-                            </h3>
+                    {loading && (
+                        <div className="flex justify-center items-center py-12">
+                            <Loader2
+                                className="animate-spin text-blue-500"
+                                size={48}
+                            />
+                            <span className="ml-4 text-xl text-gray-600">
+                                Searching for Pokémon...
+                            </span>
                         </div>
+                    )}
 
-                        <PokemonGrid
-                            pokemons={searchResults}
-                            loading={loading}
-                            onPokemonClick={handlePokemonClick}
-                        />
-                    </div>
-                )}
+                    {results.length > 0 && (
+                        <div className="mb-8">
+                            <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
+                                Search Results ({results.length})
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                {results.map((pokemon, index) => (
+                                    <div
+                                        key={pokemon.id}
+                                        className="animate-fade-in"
+                                        style={{
+                                            animationDelay: `${index * 0.1}s`,
+                                        }}
+                                    >
+                                        <PokemonCard pokemon={pokemon} />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
-                {/* Initial State */}
-                {!hasSearched && !allPokemonsLoading && (
-                    <div className="text-center py-16">
-                        <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-12 max-w-2xl mx-auto">
-                            <Sparkles className="w-16 h-16 text-purple-500 mx-auto mb-6" />
-                            <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                                Start your adventure!
+                    {query && !loading && results.length === 0 && (
+                        <div className="text-center py-12">
+                            <div className="text-6xl mb-4">😢</div>
+                            <h3 className="text-2xl font-bold text-gray-600 mb-2">
+                                No Pokémon Found
                             </h3>
-                            <p className="text-gray-600 text-lg">
-                                Enter a Pokemon name in the search bar above to
-                                find your new friend
+                            <p className="text-gray-500">
+                                Try a different search term. Our fuzzy search
+                                handles typos, but some spellings might be too
+                                different.
                             </p>
                         </div>
-                    </div>
-                )}
-            </main>
-        </div>
+                    )}
+                </div>
+            </div>
+
+            <AuthModal
+                isOpen={showAuthModal}
+                onClose={() => setShowAuthModal(false)}
+            />
+        </>
     )
 }
 
