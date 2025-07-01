@@ -1,168 +1,85 @@
-import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Library, Heart, Trash2 } from 'lucide-react'
-import PokemonGrid from './PokemonGrid'
-import { PokemonDetail } from '../types/pokemon'
-import {
-    getStoredPokemons,
-    removePokemonFromStorage,
-} from '../utils/localStorage'
+import React from 'react';
+import { useLibrary } from '../context/LibraryContext';
+import { useAuth } from '../context/AuthContext';
+import PokemonCard from './PokemonCard';
+import AuthModal from './AuthModal';
 
-interface LibraryPageProps {
-    type: 'library' | 'favorites'
-}
+// Library page component showing user's collected Pokemon
+const LibraryPage: React.FC = () => {
+  const { library, loading } = useLibrary();
+  const { user } = useAuth();
+  const [showAuthModal, setShowAuthModal] = React.useState(false);
 
-const LibraryPage: React.FC<LibraryPageProps> = ({ type }) => {
-    const navigate = useNavigate()
-    const [pokemons, setPokemons] = useState<PokemonDetail[]>([])
-    const [loading, setLoading] = useState(true)
-
-    const title = type === 'library' ? 'My Library' : 'Favorite Pokemon'
-    const icon = type === 'library' ? Library : Heart
-    const IconComponent = icon
-
-    useEffect(() => {
-        const loadPokemons = async () => {
-            setLoading(true)
-            const storedIds = getStoredPokemons(type)
-
-            if (storedIds.length === 0) {
-                setPokemons([])
-                setLoading(false)
-                return
-            }
-
-            try {
-                const promises = storedIds.map(async (id) => {
-                    const response = await fetch(
-                        `https://pokeapi.co/api/v2/pokemon/${id}`
-                    )
-                    return response.json()
-                })
-
-                const pokemonDetails = await Promise.all(promises)
-                setPokemons(pokemonDetails)
-            } catch (error) {
-                console.error('Error loading pokemons:', error)
-                setPokemons([])
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        loadPokemons()
-    }, [type])
-
-    const handlePokemonClick = (pokemon: PokemonDetail) => {
-        navigate(`/pokemon/${pokemon.id}`)
-    }
-
-    const handleLibraryChange = () => {
-        // Reload the page to reflect changes
-        window.location.reload()
-    }
-
-    const clearAll = () => {
-        const storedIds = getStoredPokemons(type)
-        storedIds.forEach((id) => removePokemonFromStorage(id, type))
-        setPokemons([])
-    }
-
+  if (!user) {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-            {/* Header */}
-            <header className="bg-white/80 backdrop-blur-sm shadow-sm sticky top-0 z-40">
-                <div className="max-w-7xl mx-auto px-4 py-4">
-                    <div className="flex items-center justify-between">
-                        <button
-                            onClick={() => navigate('/')}
-                            className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 
-                       transition-colors duration-200"
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                            <span>Back to Search</span>
-                        </button>
-
-                        {pokemons.length > 0 && (
-                            <button
-                                onClick={clearAll}
-                                className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white 
-                         rounded-lg hover:bg-red-600 transition-colors duration-200"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                                <span>Clear All</span>
-                            </button>
-                        )}
-                    </div>
-                </div>
-            </header>
-
-            {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-4 py-8">
-                <div className="text-center mb-8">
-                    <div className="flex items-center justify-center space-x-3 mb-4">
-                        <IconComponent
-                            className={`w-12 h-12 ${
-                                type === 'library'
-                                    ? 'text-blue-500'
-                                    : 'text-red-500'
-                            }`}
-                        />
-                        <h1 className="text-4xl font-bold text-gray-800">
-                            {title}
-                        </h1>
-                    </div>
-                    <p className="text-xl text-gray-600">
-                        {pokemons.length === 0
-                            ? `You don't have any Pokemon in your ${
-                                  type === 'library' ? 'library' : 'favorites'
-                              } yet`
-                            : `${pokemons.length} Pokemon in your ${
-                                  type === 'library' ? 'library' : 'favorites'
-                              }`}
-                    </p>
-                </div>
-
-                {pokemons.length === 0 && !loading ? (
-                    <div className="text-center py-16">
-                        <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-12 max-w-2xl mx-auto">
-                            <IconComponent
-                                className={`w-16 h-16 mx-auto mb-6 ${
-                                    type === 'library'
-                                        ? 'text-blue-500'
-                                        : 'text-red-500'
-                                }`}
-                            />
-                            <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                                {type === 'library'
-                                    ? 'Library is empty'
-                                    : 'No favorite Pokemon'}
-                            </h3>
-                            <p className="text-gray-600 text-lg mb-6">
-                                {type === 'library'
-                                    ? 'Find Pokemon and add them to your library'
-                                    : 'Find Pokemon and add them to your favorites'}
-                            </p>
-                            <button
-                                onClick={() => navigate('/')}
-                                className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 
-                         transition-colors duration-200"
-                            >
-                                Start Searching
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    <PokemonGrid
-                        pokemons={pokemons}
-                        loading={loading}
-                        onPokemonClick={handlePokemonClick}
-                        onLibraryChange={handleLibraryChange}
-                    />
-                )}
-            </main>
+      <>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-6xl mb-4">🔒</div>
+            <h2 className="text-3xl font-bold text-gray-600 mb-4">Sign In Required</h2>
+            <p className="text-gray-500 mb-8">
+              Please sign in to access your Pokemon library
+            </p>
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Sign In
+            </button>
+          </div>
         </div>
-    )
-}
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+        />
+      </>
+    );
+  }
 
-export default LibraryPage
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-xl text-gray-600">Loading your library...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-4">
+            My Pokémon Library
+          </h1>
+          <p className="text-xl text-gray-600">
+            Your collected Pokémon collection ({library.length} Pokémon)
+          </p>
+        </div>
+
+        {library.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">📚</div>
+            <h3 className="text-2xl font-bold text-gray-600 mb-2">Your Library is Empty</h3>
+            <p className="text-gray-500">
+              Start exploring and add Pokémon to your library!
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {library.map((pokemon, index) => (
+              <div
+                key={pokemon.id}
+                className="animate-fade-in"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <PokemonCard pokemon={pokemon} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
