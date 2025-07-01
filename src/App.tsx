@@ -1,24 +1,37 @@
+import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
+import { LibraryProvider } from './context/LibraryContext'
+import Header from './components/Header'
 import SearchPage from './components/SearchPage'
 import PokemonDetail from './components/PokemonDetail'
 import LibraryPage from './components/LibraryPage'
+import FavoritesPage from './components/FavoritesPage'
 
+// Main App component with authentication and library context providers
 function App() {
     return (
-        <Router>
-            <Routes>
-                <Route path="/" element={<SearchPage />} />
-                <Route path="/pokemon/:id" element={<PokemonDetail />} />
-                <Route
-                    path="/library"
-                    element={<LibraryPage type="library" />}
-                />
-                <Route
-                    path="/favorites"
-                    element={<LibraryPage type="favorites" />}
-                />
-            </Routes>
-        </Router>
+        <AuthProvider>
+            <LibraryProvider>
+                <Router>
+                    <div className="min-h-screen">
+                        <Header />
+                        <Routes>
+                            <Route path="/" element={<SearchPage />} />
+                            <Route
+                                path="/pokemon/:name"
+                                element={<PokemonDetail />}
+                            />
+                            <Route path="/library" element={<LibraryPage />} />
+                            <Route
+                                path="/favorites"
+                                element={<FavoritesPage />}
+                            />
+                        </Routes>
+                    </div>
+                </Router>
+            </LibraryProvider>
+        </AuthProvider>
     )
 }
 
