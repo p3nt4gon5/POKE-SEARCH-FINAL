@@ -2,13 +2,6 @@ export interface Pokemon {
     id: number
     name: string
     url: string
-}
-
-export interface PokemonDetail {
-    id: number
-    name: string
-    height: number
-    weight: number
     sprites: {
         front_default: string
         other: {
@@ -17,8 +10,15 @@ export interface PokemonDetail {
             }
         }
     }
+    height: number
+    weight: number
     types: Array<{
         type: {
+            name: string
+        }
+    }>
+    abilities: Array<{
+        ability: {
             name: string
         }
     }>
@@ -28,16 +28,14 @@ export interface PokemonDetail {
             name: string
         }
     }>
-    abilities: Array<{
-        ability: {
-            name: string
-        }
-    }>
+}
+
+export interface PokemonListItem {
+    name: string
+    url: string
 }
 
 export interface PokemonListResponse {
+    results: PokemonListItem[]
     count: number
-    next: string | null
-    previous: string | null
-    results: Pokemon[]
 }
