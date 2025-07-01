@@ -1,252 +1,248 @@
 import React from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Heart, BookOpen, Ruler, Weight } from 'lucide-react'
-import { usePokemonDetail } from '../hooks/usePokemon'
-import {
-    isPokemonInStorage,
-    addPokemonToStorage,
-    removePokemonFromStorage,
-} from '../utils/localStorage'
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Heart, Library, Plus } from 'lucide-react'
+import { usePokemon } from '../hooks/usePokemon'
+import { useLibrary } from '../context/LibraryContext'
+import { useAuth } from '../context/AuthContext'
 
-const typeColors: { [key: string]: string } = {
-    normal: 'bg-gray-400',
+// Type colors for Pokemon types
+const typeColors: Record<string, string> = {
     fire: 'bg-red-500',
     water: 'bg-blue-500',
-    electric: 'bg-yellow-400',
     grass: 'bg-green-500',
-    ice: 'bg-blue-300',
+    electric: 'bg-yellow-500',
+    psychic: 'bg-pink-500',
+    ice: 'bg-cyan-400',
+    dragon: 'bg-purple-600',
+    dark: 'bg-gray-800',
+    fairy: 'bg-pink-300',
     fighting: 'bg-red-700',
     poison: 'bg-purple-500',
     ground: 'bg-yellow-600',
     flying: 'bg-indigo-400',
-    psychic: 'bg-pink-500',
     bug: 'bg-green-400',
     rock: 'bg-yellow-800',
     ghost: 'bg-purple-700',
-    dragon: 'bg-indigo-700',
-    dark: 'bg-gray-800',
-    steel: 'bg-gray-500',
-    fairy: 'bg-pink-300',
+    steel: 'bg-gray-400',
+    normal: 'bg-gray-500',
 }
 
+// Pokemon detail page component with navigation state preservation
 const PokemonDetail: React.FC = () => {
-    const { id } = useParams<{ id: string }>()
+    const { name } = useParams<{ name: string }>()
+    const location = useLocation()
     const navigate = useNavigate()
-    const { pokemon, loading } = usePokemonDetail(id)
+    const { pokemon, loading, error } = usePokemon(name || null)
+    const { addToLibrary, addToFavorites, isInLibrary, isInFavorites } =
+        useLibrary()
+    const { user } = useAuth()
+
+    // Get the previous location from navigation state, fallback to home
+    const previousPath = location.state?.from || '/'
+
+    // Handle back navigation to preserve user's previous location
+    const handleGoBack = () => {
+        if (location.state?.from) {
+            navigate(previousPath)
+        } else {
+            navigate('/')
+        }
+    }
 
     if (loading) {
         return (
-            <div
-                className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 
-                    flex items-center justify-center"
-            >
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-500 mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Loading Pokemon...</p>
+                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <p className="text-xl text-gray-600">Loading Pokémon...</p>
                 </div>
             </div>
         )
     }
 
-    if (!pokemon) {
+    if (error || !pokemon) {
         return (
-            <div
-                className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 
-                    flex items-center justify-center"
-            >
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
                 <div className="text-center">
-                    <p className="text-gray-600">Pokemon not found</p>
+                    <div className="text-6xl mb-4">😢</div>
+                    <h2 className="text-3xl font-bold text-gray-600 mb-4">
+                        Pokémon Not Found
+                    </h2>
+                    <p className="text-gray-500 mb-8">{error}</p>
                     <button
-                        onClick={() => navigate('/')}
-                        className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 
-                     transition-colors duration-200"
+                        onClick={handleGoBack}
+                        className="inline-flex items-center px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                     >
-                        Back to Search
+                        <ArrowLeft size={20} className="mr-2" />
+                        Go Back
                     </button>
                 </div>
             </div>
         )
-    }
-
-    const isInLibrary = isPokemonInStorage(pokemon.id, 'library')
-    const isInFavorites = isPokemonInStorage(pokemon.id, 'favorites')
-
-    const handleLibraryToggle = () => {
-        if (isInLibrary) {
-            removePokemonFromStorage(pokemon.id, 'library')
-        } else {
-            addPokemonToStorage(pokemon.id, 'library')
-        }
-        // Force re-render
-        window.location.reload()
-    }
-
-    const handleFavoriteToggle = () => {
-        if (isInFavorites) {
-            removePokemonFromStorage(pokemon.id, 'favorites')
-        } else {
-            addPokemonToStorage(pokemon.id, 'favorites')
-        }
-        // Force re-render
-        window.location.reload()
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-            {/* Header */}
-            <header className="bg-white/80 backdrop-blur-sm shadow-sm sticky top-0 z-40">
-                <div className="max-w-4xl mx-auto px-4 py-4">
-                    <button
-                        onClick={() => navigate('/')}
-                        className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 
-                     transition-colors duration-200"
-                    >
-                        <ArrowLeft className="w-5 h-5" />
-                        <span>Back to Search</span>
-                    </button>
-                </div>
-            </header>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+            <div className="container mx-auto px-4 py-8">
+                <button
+                    onClick={handleGoBack}
+                    className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-8 text-lg transition-colors"
+                >
+                    <ArrowLeft size={24} className="mr-2" />
+                    Back to Previous Page
+                </button>
 
-            {/* Main Content */}
-            <main className="max-w-4xl mx-auto px-4 py-8">
-                <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
-                    {/* Pokemon Image Section */}
-                    <div className="bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 p-8 relative">
-                        <div className="text-center">
-                            <img
-                                src={
-                                    pokemon.sprites.other['official-artwork']
-                                        .front_default ||
-                                    pokemon.sprites.front_default
-                                }
-                                alt={pokemon.name}
-                                className="w-64 h-64 mx-auto object-contain drop-shadow-2xl"
-                            />
-                        </div>
+                <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+                    <div className="bg-gradient-to-br from-blue-100 to-purple-100 p-8">
+                        <div className="flex flex-col lg:flex-row items-center">
+                            <div className="lg:w-1/2 text-center lg:text-left mb-8 lg:mb-0">
+                                <div className="flex items-center justify-center lg:justify-start mb-4">
+                                    <h1 className="text-4xl lg:text-5xl font-bold text-gray-800 capitalize mr-4">
+                                        {pokemon.name}
+                                    </h1>
+                                    <span className="text-2xl text-gray-500">
+                                        #
+                                        {pokemon.id.toString().padStart(3, '0')}
+                                    </span>
+                                </div>
 
-                        {/* Action Buttons */}
-                        <div className="absolute top-4 right-4 flex space-x-3">
-                            <button
-                                onClick={handleLibraryToggle}
-                                className={`p-3 rounded-full shadow-lg transition-all duration-200 
-                         ${
-                             isInLibrary
-                                 ? 'bg-blue-500 text-white'
-                                 : 'bg-white text-gray-400 hover:text-blue-500'
-                         }`}
-                            >
-                                <BookOpen className="w-6 h-6" />
-                            </button>
-                            <button
-                                onClick={handleFavoriteToggle}
-                                className={`p-3 rounded-full shadow-lg transition-all duration-200 
-                         ${
-                             isInFavorites
-                                 ? 'bg-red-500 text-white'
-                                 : 'bg-white text-gray-400 hover:text-red-500'
-                         }`}
-                            >
-                                <Heart
-                                    className={`w-6 h-6 ${
-                                        isInFavorites ? 'fill-current' : ''
-                                    }`}
+                                <div className="flex flex-wrap gap-3 justify-center lg:justify-start mb-6">
+                                    {pokemon.types.map((type) => (
+                                        <span
+                                            key={type.type.name}
+                                            className={`px-4 py-2 rounded-full text-white font-medium ${
+                                                typeColors[type.type.name] ||
+                                                'bg-gray-500'
+                                            }`}
+                                        >
+                                            {type.type.name}
+                                        </span>
+                                    ))}
+                                </div>
+
+                                {user && (
+                                    <div className="flex justify-center lg:justify-start space-x-4">
+                                        <button
+                                            onClick={() =>
+                                                addToLibrary(pokemon)
+                                            }
+                                            disabled={isInLibrary(pokemon.id)}
+                                            className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all ${
+                                                isInLibrary(pokemon.id)
+                                                    ? 'bg-green-500 text-white cursor-not-allowed'
+                                                    : 'bg-white text-green-600 border-2 border-green-600 hover:bg-green-500 hover:text-white'
+                                            }`}
+                                        >
+                                            {isInLibrary(pokemon.id) ? (
+                                                <Library size={20} />
+                                            ) : (
+                                                <Plus size={20} />
+                                            )}
+                                            <span className="ml-2">
+                                                {isInLibrary(pokemon.id)
+                                                    ? 'In Library'
+                                                    : 'Add to Library'}
+                                            </span>
+                                        </button>
+
+                                        <button
+                                            onClick={() =>
+                                                addToFavorites(pokemon)
+                                            }
+                                            disabled={isInFavorites(pokemon.id)}
+                                            className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all ${
+                                                isInFavorites(pokemon.id)
+                                                    ? 'bg-red-500 text-white cursor-not-allowed'
+                                                    : 'bg-white text-red-600 border-2 border-red-600 hover:bg-red-500 hover:text-white'
+                                            }`}
+                                        >
+                                            <Heart
+                                                size={20}
+                                                fill={
+                                                    isInFavorites(pokemon.id)
+                                                        ? 'currentColor'
+                                                        : 'none'
+                                                }
+                                            />
+                                            <span className="ml-2">
+                                                {isInFavorites(pokemon.id)
+                                                    ? 'Favorited'
+                                                    : 'Add to Favorites'}
+                                            </span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="lg:w-1/2 flex justify-center">
+                                <img
+                                    src={
+                                        pokemon.sprites.other[
+                                            'official-artwork'
+                                        ].front_default ||
+                                        pokemon.sprites.front_default
+                                    }
+                                    alt={pokemon.name}
+                                    className="w-64 h-64 lg:w-80 lg:h-80 object-contain"
                                 />
-                            </button>
-                        </div>
-
-                        {/* Pokemon Number */}
-                        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-full px-4 py-2">
-                            <span className="text-lg font-bold text-gray-600">
-                                #{pokemon.id.toString().padStart(3, '0')}
-                            </span>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Pokemon Info Section */}
                     <div className="p-8">
-                        {/* Name and Types */}
-                        <div className="text-center mb-8">
-                            <h1 className="text-4xl font-bold text-gray-800 capitalize mb-4">
-                                {pokemon.name}
-                            </h1>
-                            <div className="flex justify-center space-x-3">
-                                {pokemon.types.map((type) => (
-                                    <span
-                                        key={type.type.name}
-                                        className={`px-4 py-2 rounded-full text-white text-lg font-medium capitalize 
-                              ${typeColors[type.type.name] || 'bg-gray-400'}`}
-                                    >
-                                        {type.type.name}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Physical Stats */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                            <div className="bg-gray-50 rounded-2xl p-6">
-                                <div className="flex items-center space-x-3 mb-3">
-                                    <Ruler className="w-6 h-6 text-blue-500" />
-                                    <h3 className="text-xl font-semibold text-gray-800">
-                                        Physical Data
-                                    </h3>
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">
-                                            Height:
-                                        </span>
-                                        <span className="font-semibold">
-                                            {(pokemon.height / 10).toFixed(1)} m
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">
-                                            Weight:
-                                        </span>
-                                        <span className="font-semibold">
-                                            {(pokemon.weight / 10).toFixed(1)}{' '}
-                                            kg
-                                        </span>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                                    Basic Information
+                                </h2>
+                                <div className="bg-gray-50 rounded-lg p-6">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <span className="text-gray-600 font-medium">
+                                                Height:
+                                            </span>
+                                            <p className="text-xl font-bold">
+                                                {pokemon.height / 10}m
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-600 font-medium">
+                                                Weight:
+                                            </span>
+                                            <p className="text-xl font-bold">
+                                                {pokemon.weight / 10}kg
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="bg-gray-50 rounded-2xl p-6">
-                                <h3 className="text-xl font-semibold text-gray-800 mb-3">
+                                <h3 className="text-xl font-bold text-gray-800 mt-6 mb-3">
                                     Abilities
                                 </h3>
                                 <div className="space-y-2">
                                     {pokemon.abilities.map((ability, index) => (
-                                        <div
+                                        <span
                                             key={index}
-                                            className="bg-white rounded-lg px-3 py-2"
+                                            className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium mr-2 mb-2 capitalize"
                                         >
-                                            <span className="capitalize font-medium text-gray-700">
-                                                {ability.ability.name.replace(
-                                                    '-',
-                                                    ' '
-                                                )}
-                                            </span>
-                                        </div>
+                                            {ability.ability.name.replace(
+                                                '-',
+                                                ' '
+                                            )}
+                                        </span>
                                     ))}
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Stats */}
-                        <div className="bg-gray-50 rounded-2xl p-6">
-                            <h3 className="text-xl font-semibold text-gray-800 mb-6">
-                                Stats
-                            </h3>
-                            <div className="space-y-4">
-                                {pokemon.stats.map((stat) => {
-                                    const percentage =
-                                        (stat.base_stat / 255) * 100
-                                    return (
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                                    Base Stats
+                                </h2>
+                                <div className="space-y-4">
+                                    {pokemon.stats.map((stat) => (
                                         <div key={stat.stat.name}>
-                                            <div className="flex justify-between mb-2">
-                                                <span className="capitalize text-gray-600 font-medium">
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className="text-gray-600 font-medium capitalize">
                                                     {stat.stat.name.replace(
                                                         '-',
                                                         ' '
@@ -256,23 +252,27 @@ const PokemonDetail: React.FC = () => {
                                                     {stat.base_stat}
                                                 </span>
                                             </div>
-                                            <div className="w-full bg-gray-200 rounded-full h-3">
+                                            <div className="w-full bg-gray-200 rounded-full h-2">
                                                 <div
-                                                    className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full 
-                                   transition-all duration-1000"
+                                                    className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-500"
                                                     style={{
-                                                        width: `${percentage}%`,
+                                                        width: `${Math.min(
+                                                            (stat.base_stat /
+                                                                150) *
+                                                                100,
+                                                            100
+                                                        )}%`,
                                                     }}
                                                 ></div>
                                             </div>
                                         </div>
-                                    )
-                                })}
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </main>
+            </div>
         </div>
     )
 }
