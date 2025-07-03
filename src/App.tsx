@@ -1,12 +1,19 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
-import { LibraryProvider } from "./context/LibraryContext";
-import Header from "./components/Header";
-import SearchPage from "./components/SearchPage";
-import PokemonDetail from "./components/PokemonDetail";
-import LibraryPage from "./components/LibraryPage";
-import FavoritesPage from "./components/FavoritesPage";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { LibraryProvider } from './context/LibraryContext';
+import Header from './components/Header';
+import SearchPage from './components/SearchPage';
+import PokemonDetail from './components/PokemonDetail';
+import LibraryPage from './components/LibraryPage';
+import FavoritesPage from './components/FavoritesPage';
+import UserProfile from './components/UserProfile';
+
+
+
+
+
+
 
 // Main App component with authentication and library context providers
 function App() {
@@ -21,6 +28,7 @@ function App() {
               <Route path="/pokemon/:name" element={<PokemonDetail />} />
               <Route path="/library" element={<LibraryPage />} />
               <Route path="/favorites" element={<FavoritesPage />} />
+              <Route path="/profile" element={<UserProfile />} />
             </Routes>
           </div>
         </Router>
@@ -28,5 +36,6 @@ function App() {
     </AuthProvider>
   );
 }
+
 
 export default App;
