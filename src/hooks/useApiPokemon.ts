@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { PokemonService, PokemonListItem } from '../services/pokemonService';
+import { PokemonService, PokemonListItem } from '../service/pokemonService';
 import { Pokemon } from '../types/pokemon';
 
 // Хук для работы с API покемонов с пагинацией

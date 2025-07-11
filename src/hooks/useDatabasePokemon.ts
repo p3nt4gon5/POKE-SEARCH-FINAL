@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { DatabaseService, DatabasePokemon } from '../services/databaseService';
+import { DatabaseService, DatabasePokemon } from '../service/databaseService';
 
 // Хук для работы с покемонами из базы данных
 export const useDatabasePokemon = () => {

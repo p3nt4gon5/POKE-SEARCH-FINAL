@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Plus, Check, Loader2, Search, Filter, AlertCircle } from 'lucide-react';
 import { useApiPokemon, usePokemonBatch } from '../../hooks/useApiPokemon';
 import { usePokemonInDatabase } from '../../hooks/useDatabasePokemon';
-import { DatabaseService } from '../../services/databaseService';
-import { PokemonService } from '../../services/pokemonService';
+import { DatabaseService } from '../../service/databaseService';
+import { PokemonService } from '../../service/pokemonService';
 import { Pokemon } from '../../types/pokemon';
 
 interface AdminAllPokemonPageProps {

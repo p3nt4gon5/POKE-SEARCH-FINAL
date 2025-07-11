@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Fuse from 'fuse.js';
 import { Pokemon } from '../types/pokemon';
-import { DatabaseService, DatabasePokemon } from '../services/databaseService';
+import { DatabaseService, DatabasePokemon } from '../service/databaseService';
 
 // Преобразование DatabasePokemon в Pokemon для совместимости
 const convertDatabasePokemonToPokemon = (dbPokemon: DatabasePokemon): Pokemon => ({

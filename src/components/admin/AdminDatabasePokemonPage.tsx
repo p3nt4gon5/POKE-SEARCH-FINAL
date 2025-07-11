@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Search, Trash2, Eye, EyeOff, Edit } from 'lucide-react';
 import { useDatabasePokemon } from '../../hooks/useDatabasePokemon';
-import { DatabaseService } from '../../services/databaseService';
+import { DatabaseService } from '../../service/databaseService';
 
 interface AdminDatabasePokemonPageProps {
   onBack: () => void;
